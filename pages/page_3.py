@@ -13,8 +13,8 @@ import dash_bootstrap_components as dbc
 dash.register_page(__name__, name='User_Customisation')
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP,dbc_css])
-covid_dataset=pd.read_csv('C:/Users/navan/Downloads/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/country-and-continent.csv')
+covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
 country_continent_dataset.dropna(inplace=True)
 merged_dataset= covid_dataset.merge(country_continent_dataset, how = 'left', on = 'CountryCode')
 null_continents=merged_dataset[merged_dataset['Continent_Name'].isna()]
