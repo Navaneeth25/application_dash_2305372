@@ -2,5 +2,6 @@ dash == 2.9.0
 pandas
 raceplotly
 dash_bootstrap_components
+dash_pivottable
 seaborn
 gunicorn
