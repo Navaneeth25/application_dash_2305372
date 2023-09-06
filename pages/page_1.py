@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sn
 import plotly.express as px
+import plotly.graph_objects as go
 import dash
 from dash import dcc, html, callback, Output, Input
 from dash.dependencies import Input, Output
@@ -13,9 +14,14 @@ dash.register_page(__name__, path='/', name='Home')
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP,dbc_css])
-covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
+covid_dataset=pd.read_csv('C:/Users/navan/Downloads/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/country-and-continent.csv')
+countries_lat_long=pd.read_csv('C:/Users/navan/Downloads/archive/world_country_and_usa_states_latitude_and_longitude_values.csv')
+countries_lat_long.drop(['usa_state_code', 'usa_state_latitude','usa_state_longitude','usa_state','country_code'], axis=1,inplace=True)
+countries_lat_long.rename(columns = {'country':'CountryName'}, inplace = True)
+new_dataset=pd.merge(covid_dataset, countries_lat_long, on="CountryName",how="left")
 country_continent_dataset.dropna(inplace=True)
+covid_dataset=new_dataset
 merged_dataset= covid_dataset.merge(country_continent_dataset, how = 'left', on = 'CountryCode')
 null_continents=merged_dataset[merged_dataset['Continent_Name'].isna()]
 merged_dataset['Continent_Name']=merged_dataset['Continent_Name'].fillna(value='Europe')
@@ -39,13 +45,32 @@ df4=fillna_values.copy()
 df4= fillna_values[fillna_values['ConfirmedDeaths'] != 0]
 df4['date'] = pd.to_datetime(df4['Date'], format='%Y%m%d')
 fillna_values['date'] = pd.to_datetime(fillna_values['Date'], format='%Y%m%d')
+covid1 = fillna_values.groupby(['CountryName', 'latitude', 'longitude'])[['ConfirmedCases', 'ConfirmedDeaths']].sum().reset_index()
 fig1=px.line(df3,x='Date',y='ConfirmedCases',log_y=True,color='CountryName')
 fig2=px.sunburst(fillna_values, color='StringencyIndex', values='ConfirmedCases',
                 path=['Continent_Name','CountryName'])
 fig4 = px.treemap(fillna_values, path=[px.Constant('world'), 'Continent_Name','CountryName',], values='ConfirmedCases',
                   color='StringencyIndex', hover_data=['CountryName'])
-fig5 = px.scatter_geo(fillna_values, locations="CountryCode", color="Continent_Name",hover_name="CountryName", 
-                    size="ConfirmedCases",animation_frame="Date",size_max=20,projection="natural earth")
+mapbox_token='pk.eyJ1IjoicXM2MjcyNTI3IiwiYSI6ImNraGRuYTF1azAxZmIycWs0cDB1NmY1ZjYifQ.I1VJ3KjeM-S613FLv3mtkw'
+map_data = go.Scattermapbox(lon=covid1['longitude'],lat=covid1['latitude'],mode='markers',marker=go.scattermapbox.Marker(
+                    size=covid1['ConfirmedCases'] / 10000,color=covid1['ConfirmedDeaths'],colorscale='mrybm',showscale=False,sizemode='area'),hoverinfo='text',
+                    hovertext='<b>Country</b>: ' + covid1['CountryName'].astype(str) + '<br>'+
+                    '<b>Confirmed</b>: ' + [f'{x:,.0f}' for x in covid1['ConfirmedCases']] + '<br>' +
+                    '<b>Deaths</b>: ' + [f'{x:,.0f}' for x in covid1['ConfirmedDeaths']] + '<br>'
+),
+layout = go.Layout(
+    hovermode='closest',
+    mapbox=dict(
+    accesstoken=mapbox_token,
+    center=go.layout.mapbox.Center(lat=36, lon=-5.4),
+    style='dark',
+    zoom=5),
+    autosize=False,
+
+)
+fig5 = go.Figure(data=map_data, layout=layout)
+fig5.show()
+
 sidebar = html.Div(
     [
         dbc.Nav(
@@ -65,7 +90,10 @@ sidebar = html.Div(
                 html.Br(),
                 html.Label('Policy'),
                 dcc.Dropdown(id="Policy", options=[{'label': 'Not Selected', 'value': 'Not Selected'},{'label': 'School closing', 'value': 'School closing'},
-                                             {'label': 'Stay at home requirements', 'value': 'Stay at home requirements'}], value='Not Selected')
+                                             {'label': 'Stay at home requirements', 'value': 'Stay at home requirements'}], value='Not Selected'),
+                html.Br(),
+                html.Label('Select Country for map:'),
+                dcc.Dropdown(id='Countries',options=[{'label': c, 'value': c}for c in (covid1['CountryName'].unique())],value='United Kingdom')
 
             ],
             vertical=True
@@ -84,23 +112,41 @@ layout = html.Div(children =[header,
                     dbc.Row([
                     dbc.Col(width=2,style={"height": "45vh"}),
                     dbc.Col(dcc.Graph(id = 'fig4',figure = fig4,style={'height':'40vh',"margin":"10 px"}),width=5,style={'float':'right','height':'40vh','margin-top': '10px'}),
-                    dbc.Col(dcc.Graph(id='fig5',figure=fig5,style={'height':'40vh',"margin":"10 px"}),width=5,style={'height':'40vh','margin-top': '10px'})
+                    dbc.Col(dcc.Graph(id = 'fig5',style={'height':'40vh',"margin":"5px"},figure = fig5),width=5,style={'height':'40vh','margin-top': '10px'})
                            ])
                     ],style={"background-color": "black"})
                            
                     
-@callback(Output('fig1', 'figure'),Output('fig2','figure'),Output('fig4','figure'),Output('fig5','figure'),[Input('Continent', 'value'),Input('Data Input','value'),Input('Policy','value')])
-def updatefig(g,d,m):
-    if g=='world':
+@callback(Output('fig1', 'figure'),Output('fig2','figure'),Output('fig4','figure'),Output('fig5','figure'),[Input('Continent', 'value'),Input('Data Input','value'),Input('Policy','value'),Input('Countries', 'value')])
+def updatefig(g,d,m,n):
+    if g=='world' and n:
+        covid1 = fillna_values.groupby(['CountryName', 'latitude', 'longitude'])[['ConfirmedCases', 'ConfirmedDeaths']].sum().reset_index()
+        covid_data_2 = covid1[covid1['CountryName'] == n]
         df=df4.copy()
     else:
+        covid1 = fillna_values.groupby(['CountryName', 'latitude', 'longitude'])[['ConfirmedCases', 'ConfirmedDeaths']].sum().reset_index()
         df = df4[df4['Continent_Name'] == g]
-    if g=="world" and g!="oceania" and d=="Confirmed Cases":
+    if g=="world" and g!="oceania" and d=="Confirmed Cases" and n:
         return fig1,fig2,fig4,fig5
-    elif g and g!="oceania" and d and m=="Not Selected":
-        fig5=px.scatter_geo(fillna_values, locations="CountryCode", color="Continent_Name",hover_name="CountryName", 
-                    size=d,animation_frame="Date",size_max=20,scope=g,projection="natural earth")
-        fig5.update_layout(title_text= d +" of " + g + " from 1st MAR 2020 to 20 MAY 2020")
+    elif g and d and m=="Not Selected" and n:
+        covid_data_2 = covid1[covid1['CountryName'] == n]
+        if not covid_data_2.empty:
+            latitude=covid_data_2.iloc[0,1]
+            longitude=lon=covid_data_2.iloc[0,2]
+        else:
+            latitude=36
+            longitude=-5.4
+        map_data = go.Scattermapbox(lon=covid_data_2['longitude'],lat=covid_data_2['latitude'],mode='markers',marker=go.scattermapbox.Marker(
+                    size=covid_data_2['ConfirmedCases'] / 10000,color=covid_data_2['ConfirmedDeaths'],colorscale='mrybm',showscale=False,sizemode='area'),hoverinfo='text',
+                    hovertext='<b>Country</b>: ' + covid_data_2['CountryName'].astype(str) + '<br>'+
+                    '<b>Confirmed</b>: ' + [f'{x:,.0f}' for x in covid_data_2['ConfirmedCases']] + '<br>' +
+                    '<b>Deaths</b>: ' + [f'{x:,.0f}' for x in covid_data_2['ConfirmedDeaths']] + '<br>'
+        ),
+        layout = go.Layout(
+        mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),style='dark',zoom=4),
+        autosize=False,
+        )
+        fig5 = go.Figure(data=map_data, layout=layout)
         fig2=px.sunburst(df, color='StringencyIndex', values=d,path=['Continent_Name','CountryName'],hover_name='Continent_Name')
         fig2.update_layout(title_text= d +" for top 5 countries")
         fig4 = px.treemap(df, path=[px.Constant('world'), 'Continent_Name','CountryName',], values=d,
@@ -112,27 +158,8 @@ def updatefig(g,d,m):
         else:
             fig1=px.line(df3,x='Date',y=d,color='CountryName')
             fig1.update_layout(title_text= d +" for top 5 countries")
-            
         return fig1,fig2,fig4,fig5
-    elif g=="oceania" and d and m=="Not Selected":
-        fig5=px.scatter_geo(fillna_values, locations="CountryCode", color="Continent_Name",hover_name="CountryName", 
-                    size=d,animation_frame="Date",size_max=20,scope='world',projection="natural earth")
-        fig5.update_geos(center=dict(lon=150, lat=-25), projection_rotation=dict(lon=0, lat=0, roll=0), scope='world')
-        fig5.update_geos(lataxis_range=[-50, 10], lonaxis_range=[95, 180])
-        fig5.update_layout(title_text= d + " of " + g + " from 1st MAR 2020 to 20 MAY 2020")
-        fig2=px.sunburst(df, color='StringencyIndex', values=d,path=['Continent_Name','CountryName'],hover_name='Continent_Name')
-        fig2.update_layout(title_text= d +" for top 5 countries")
-        fig4 = px.treemap(df, path=[px.Constant('world'), 'Continent_Name','CountryName',], values=d,
-                color='StringencyIndex',hover_name='CountryName')
-        fig4.update_layout(title_text= d +" for top 5 countries")
-        if d=='ConfirmedCases':
-            fig1=px.line(df3,x='Date',y=d,color='CountryName',log_y=True)
-            fig1.update_layout(title_text= d +" for top 5 countries")
-        else:
-            fig1=px.line(df3,x='Date',y=d,color='CountryName')
-            fig1.update_layout(title_text= d +" for top 5 countries")
-        return fig1,fig2,fig4,fig5
-    elif g=="oceania" and m=="School closing" or g=="Oceania" and m=="Stay at home requirements":
+    elif g=="oceania" and m=="School closing" or g=="Oceania" and m=="Stay at home requirements" and n:
         fig5= px.choropleth(fillna_values, locations="CountryCode",
                             color=m,animation_frame="Date",hover_name="CountryName",color_continuous_scale=px.colors.sequential.Plasma,scope='world')
         fig5.update_geos(center=dict(lon=150, lat=-25), projection_rotation=dict(lon=0, lat=0, roll=0), scope='world')
@@ -145,7 +172,7 @@ def updatefig(g,d,m):
         if m=="School closing":
             fig1.update_yaxes(categoryorder='array', categoryarray= ['no measures', 'recommend closing', 'require localised closing', 'require all closing'])
         return fig1,fig2,fig4,fig5
-    elif g and g!="oceania" and m=="School closing" or m=="Stay at home requirements":
+    elif g and g!="oceania" and m=="School closing" or m=="Stay at home requirements" and n:
         fig5= px.choropleth(fillna_values, locations="CountryCode",
                             color=m,animation_frame="Date",hover_name="CountryName",color_continuous_scale=px.colors.sequential.Plasma,scope=g)
         fig5.update_layout(title_text= m + " of " + g + " from 1st MAR 2020 to 20 MAY 2020")
