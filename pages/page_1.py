@@ -14,9 +14,9 @@ dash.register_page(__name__, path='/', name='Home')
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP,dbc_css])
-covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
-countries_lat_long=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/world_country_and_usa_states_latitude_and_longitude_values.csv')
+covid_dataset=pd.read_csv('C:/Users/navan/Downloads/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/country-and-continent.csv')
+countries_lat_long=pd.read_csv('C:/Users/navan/Downloads/archive/world_country_and_usa_states_latitude_and_longitude_values.csv')
 countries_lat_long.drop(['usa_state_code', 'usa_state_latitude','usa_state_longitude','usa_state','country_code'], axis=1,inplace=True)
 countries_lat_long.rename(columns = {'country':'CountryName'}, inplace = True)
 new_dataset=pd.merge(covid_dataset, countries_lat_long, on="CountryName",how="left")
@@ -64,8 +64,7 @@ layout = go.Layout(
     accesstoken=mapbox_token,
     center=go.layout.mapbox.Center(lat=36, lon=-5.4),
     style='dark',
-    zoom=5),
-    autosize=False,
+    zoom=3)
 
 )
 fig5 = go.Figure(data=map_data, layout=layout)
@@ -112,7 +111,7 @@ layout = html.Div(children =[header,
                     dbc.Row([
                     dbc.Col(width=2,style={"height": "45vh"}),
                     dbc.Col(dcc.Graph(id = 'fig4',figure = fig4,style={'height':'40vh',"margin":"10 px"}),width=5,style={'float':'right','height':'40vh','margin-top': '10px'}),
-                    dbc.Col(dcc.Graph(id = 'fig5',style={'height':'40vh',"margin":"5px"},figure = fig5),width=5,style={'height':'40vh','margin-top': '10px'})
+                    dbc.Col(dcc.Graph(id = 'fig5',style={'height':'40vh',"margin":"10px"},figure = fig5),width=5,style={'height':'40vh','margin-top': '10px'})
                            ])
                     ],style={"background-color": "black"})
                            
@@ -143,8 +142,7 @@ def updatefig(g,d,m,n):
                     '<b>Deaths</b>: ' + [f'{x:,.0f}' for x in covid_data_2['ConfirmedDeaths']] + '<br>'
         ),
         layout = go.Layout(
-        mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),style='dark',zoom=4),
-        autosize=False,
+        mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),style='dark',zoom=3)
         )
         fig5 = go.Figure(data=map_data, layout=layout)
         fig2=px.sunburst(df, color='StringencyIndex', values=d,path=['Continent_Name','CountryName'],hover_name='Continent_Name')
