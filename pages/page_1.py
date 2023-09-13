@@ -14,9 +14,9 @@ dash.register_page(__name__, path='/', name='Home')
 
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP,dbc_css])
-covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
-countries_lat_long=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/world_country_and_usa_states_latitude_and_longitude_values.csv')
+covid_dataset=pd.read_csv('C:/Users/navan/Downloads/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/country-and-continent.csv')
+countries_lat_long=pd.read_csv('C:/Users/navan/Downloads/archive/world_country_and_usa_states_latitude_and_longitude_values.csv')
 countries_lat_long.drop(['usa_state_code', 'usa_state_latitude','usa_state_longitude','usa_state','country_code'], axis=1,inplace=True)
 countries_lat_long.rename(columns = {'country':'CountryName'}, inplace = True)
 new_dataset=pd.merge(covid_dataset, countries_lat_long, on="CountryName",how="left")
@@ -145,11 +145,12 @@ def updatefig(g,d,m,n):
         mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),style='dark',zoom=3)
         )
         fig5 = go.Figure(data=map_data, layout=layout)
+        fig5.update_layout(title_text= n +"total"+d)
         fig2=px.sunburst(df, color='StringencyIndex', values=d,path=['Continent_Name','CountryName'],hover_name='Continent_Name')
-        fig2.update_layout(title_text= d +" for top 5 countries")
+        fig2.update_layout(title_text= d +" hierarchy using sunburst")
         fig4 = px.treemap(df, path=[px.Constant('world'), 'Continent_Name','CountryName',], values=d,
                   color='StringencyIndex', hover_data=['CountryName'])
-        fig4.update_layout(title_text= d +" for top 5 countries")
+        fig4.update_layout(title_text= d +" hierarchy using treemap")
         if d=='ConfirmedCases':
             fig1=px.line(df3,x='Date',y=d,color='CountryName',log_y=True)
             fig1.update_layout(title_text= d +" for top 5 countries")
@@ -162,9 +163,9 @@ def updatefig(g,d,m,n):
                             color=m,animation_frame="Date",hover_name="CountryName",color_continuous_scale=px.colors.sequential.Plasma,scope='world')
         fig5.update_geos(center=dict(lon=150, lat=-25), projection_rotation=dict(lon=0, lat=0, roll=0), scope='world')
         fig5.update_geos(lataxis_range=[-50, 10], lonaxis_range=[95, 180])
-        fig5.update_layout(title_text= m + " of " + g + " from 1st MAR 2020 to 20 MAY 2020")
-        fig2 = px.bar(df, x="date", y="ConfirmedCases", color="Continent_Name", title="confirmedcases")
-        fig4 = px.bar(df, x="date", y="ConfirmedDeaths", color="Continent_Name", title="confirmedDeaths")
+        fig5.update_layout(title_text= m + " of " + g + " 03/2020 - 05/2020 ")
+        fig2 = px.bar(df, x="date", y="ConfirmedCases", color="Continent_Name", title="confirmedcases of "+g)
+        fig4 = px.bar(df, x="date", y="ConfirmedDeaths", color="Continent_Name", title="confirmedDeaths of "+g)
         fig1=px.line(df3,x='Date',y=m,color='CountryName')
         fig1.update_layout(title_text= m +" for top 5 countries")
         if m=="School closing":
@@ -173,11 +174,11 @@ def updatefig(g,d,m,n):
     elif g and g!="oceania" and m=="School closing" or m=="Stay at home requirements" and n:
         fig5= px.choropleth(fillna_values, locations="CountryCode",
                             color=m,animation_frame="Date",hover_name="CountryName",color_continuous_scale=px.colors.sequential.Plasma,scope=g)
-        fig5.update_layout(title_text= m + " of " + g + " from 1st MAR 2020 to 20 MAY 2020")
+        fig5.update_layout(title_text= m + " of " + g + " 03/2020 - 05/2020 ")
         fig1=px.line(df3,x='Date',y=m,color='CountryName')
         fig1.update_layout(title_text= m +" for top 5 countries")
-        fig2 = px.bar(df, x="date", y="ConfirmedCases", color="Continent_Name", title="confirmedcases")
-        fig4 = px.bar(df, x="date", y="ConfirmedDeaths", color="Continent_Name", title="confirmedDeaths")
+        fig2 = px.bar(df, x="date", y="ConfirmedCases", color="Continent_Name", title="confirmedcases of "+g)
+        fig4 = px.bar(df, x="date", y="ConfirmedDeaths", color="Continent_Name", title="confirmedDeaths of "+g)
         if m=="School closing":
             fig1.update_yaxes(categoryorder='array', categoryarray= ['no measures', 'recommend closing', 'require localised closing', 'require all closing'])
         return fig1,fig2,fig4,fig5
