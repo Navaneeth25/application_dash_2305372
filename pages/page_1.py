@@ -145,7 +145,7 @@ def updatefig(g,d,m,n):
         mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),style='dark',zoom=3)
         )
         fig5 = go.Figure(data=map_data, layout=layout)
-        fig5.update_layout(title_text= n +"total"+d)
+        fig5.update_layout(title_text= n +" total "+d)
         fig2=px.sunburst(df, color='StringencyIndex', values=d,path=['Continent_Name','CountryName'],hover_name='Continent_Name')
         fig2.update_layout(title_text= d +" hierarchy using sunburst")
         fig4 = px.treemap(df, path=[px.Constant('world'), 'Continent_Name','CountryName',], values=d,
