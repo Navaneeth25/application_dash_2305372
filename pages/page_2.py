@@ -88,6 +88,6 @@ def updatefig(g):
 
         fig6.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 500
         fig6.update_layout(showlegend=False)
-        fig6.update_layout(title_text="ConfirmedCases for top 10 countries over time",title_x=0.2,title_font_family="Sitka Small",
+        fig6.update_layout(title_text="ConfirmedCases vs stringency index for top 10 countries over time",title_x=0.2,title_font_family="Sitka Small",
         title_font_color="green")
         return fig6
