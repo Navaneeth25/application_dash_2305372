@@ -97,7 +97,8 @@ def updatefig(g):
 
         fig6.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 500
         fig6.update_layout(showlegend=False)
-        fig6.update_layout(title_text="Coronavirus Cases Over Time")
+        fig6.update_layout(title_text="ConfirmedCases vs Stringency Index for top 10 countries",title_x=0.2,title_font_family="Sitka Small",
+    title_font_color="green"))
         return fig6
     else:
         fig6 = go.Figure()
