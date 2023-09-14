@@ -13,8 +13,8 @@ warnings.filterwarnings('ignore')
 import dash_bootstrap_components as dbc
 dash.register_page(__name__, name='Animated plots')
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-covid_dataset=pd.read_csv('C:/Users/navan/Downloads/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/country-and-continent.csv')
+covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
 country_continent_dataset.dropna(inplace=True)
 merged_dataset= covid_dataset.merge(country_continent_dataset, how = 'left', on = 'CountryCode')
 null_continents=merged_dataset[merged_dataset['Continent_Name'].isna()]
@@ -91,5 +91,4 @@ def updatefig(g):
         fig6.update_layout(showlegend=False)
         fig6.update_layout(title_text="ConfirmedCases for top 10 countries over time",title_x=0.2,title_font_family="Sitka Small",
         title_font_color="green")
-        return fig6)
         return fig6
