@@ -13,8 +13,8 @@ warnings.filterwarnings('ignore')
 import dash_bootstrap_components as dbc
 dash.register_page(__name__, name='Animated plots')
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
+covid_dataset=pd.read_csv('C:/Users/navan/Downloads/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/country-and-continent.csv')
 country_continent_dataset.dropna(inplace=True)
 merged_dataset= covid_dataset.merge(country_continent_dataset, how = 'left', on = 'CountryCode')
 null_continents=merged_dataset[merged_dataset['Continent_Name'].isna()]
@@ -36,7 +36,9 @@ fillna_values = fillna_values.drop_duplicates(  subset = ['CountryName', 'Date']
 fillna_values['Continent_Name'] = fillna_values['Continent_Name'].replace(['North America', 'Europe', 'South America','Africa','Asia','Oceania'], ['north america', 'europe', 'south america','africa','asia','oceania'])
 df4=fillna_values.copy()
 df4= fillna_values[fillna_values['ConfirmedDeaths'] != 0]
+df4['date'] = pd.to_datetime(df4['Date'], format='%Y%m%d')
 data=fillna_values.copy()
+data1 = fillna_values.query("CountryName == ['United States','Russia','United Kingdom','Spain','Italy','Germany','China','France','Iran','Turkey']")
 fig6= barplot(data,  item_column='CountryName', value_column='ConfirmedCases', time_column='Date')
 fig6.plot(item_label = 'Top 10 countries', value_label = 'cases', frame_duration = 800)
 fig6=fig6.fig
@@ -47,7 +49,7 @@ sidebar = html.Div(
         dbc.Nav(
             [  
                 html.Label('Select Animated Chart'),
-                dcc.Dropdown(id="selecting-plot",options=[{'label': 'race_barplot', 'value': 'race_barplot'},{'label': 'scatter_plot', 'value': 'scatter_plot'}], value='race_barplot')
+                dcc.Dropdown(id="selecting-plot",options=[{'label': 'race_barplot', 'value': 'race_barplot'},{'label': 'scatter_plot_geo', 'value': 'scatter_plot_geo'},{'label': 'scatter_plot_top10', 'value': 'scatter_plot_top10'}], value='race_barplot')
 
             ],
             vertical=True
@@ -71,9 +73,23 @@ def updatefig(g):
         fig6.update_layout(title_text= "Race bar plot for top 10 countries",title_x=0.3,title_font_family="Sitka Small",
     title_font_color="green")
         return fig6
-    else:
+    elif g=='scatter_plot_geo':
         fig6 = px.scatter_geo(fillna_values, locations="CountryCode", color="Continent_Name",hover_name="CountryName", 
                     size="ConfirmedCases",animation_frame="Date",size_max=20,projection="natural earth")
         fig6.update_layout(title_text= "Scatter geo of world 03/2020 - 05/2020",title_x=0.3,title_font_family="Sitka Small",
     title_font_color="green")
+        return fig6
+    else:
+        fig6 = px.scatter(data1, x="ConfirmedCases", y="StringencyIndex", animation_frame="Date", animation_group="CountryName", 
+                 size="ConfirmedCases", color="CountryName", text="CountryCode", hover_name="CountryName",
+                 #color_discrete_sequence=px.colors.qualitative.G10,
+                 #log_x=True, 
+                 size_max=30,
+                 range_x=[0,2000000],range_y=[0,100])
+
+        fig6.layout.updatemenus[0].buttons[0].args[1]["frame"]["duration"] = 500
+        fig6.update_layout(showlegend=False)
+        fig6.update_layout(title_text="ConfirmedCases for top 10 countries over time",title_x=0.2,title_font_family="Sitka Small",
+        title_font_color="green")
+        return fig6)
         return fig6
