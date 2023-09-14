@@ -36,7 +36,6 @@ fillna_values = fillna_values.drop_duplicates(  subset = ['CountryName', 'Date']
 fillna_values['Continent_Name'] = fillna_values['Continent_Name'].replace(['North America', 'Europe', 'South America','Africa','Asia','Oceania'], ['north america', 'europe', 'south america','africa','asia','oceania'])
 df4=fillna_values.copy()
 df4= fillna_values[fillna_values['ConfirmedDeaths'] != 0]
-df4['date'] = pd.to_datetime(df4['Date'], format='%Y%m%d')
 data=fillna_values.copy()
 fig6= barplot(data,  item_column='CountryName', value_column='ConfirmedCases', time_column='Date')
 fig6.plot(item_label = 'Top 10 countries', value_label = 'cases', frame_duration = 800)
