@@ -27,6 +27,7 @@ fillna_values['CountryName']=merged_dataset['CountryName']
 fillna_values = fillna_values.groupby('CountryName').apply(lambda x: x.sort_values('Date')).reset_index(drop=True)
 data=fillna_values.query('Date==20200520').drop_duplicates(['CountryCode']).reset_index(drop=True)
 fillna_values['Date'] = pd.to_datetime(fillna_values['Date'], format='%Y%m%d').dt.date
+fillna_values['daily_cases'] = fillna_values.groupby('CountryName')['ConfirmedCases'].diff()
 data=fillna_values.query('Date==20200520').drop_duplicates(['CountryCode']).reset_index(drop=True)
 data['Date'] = pd.to_datetime(data['Date'], format='%Y%m%d').dt.date
 layout = html.Div([
