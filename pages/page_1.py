@@ -60,7 +60,6 @@ layout = go.Layout(
     mapbox=dict(
     accesstoken=mapbox_token,
     center=go.layout.mapbox.Center(lat=36, lon=-5.4),
-    style='dark',
     zoom=3)
 
 )
@@ -139,7 +138,7 @@ def updatefig(g,d,m,n):
                     '<b>Deaths</b>: ' + [f'{x:,.0f}' for x in covid_data_2['ConfirmedDeaths']] + '<br>'
         ),
         layout = go.Layout(
-        mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),style='dark',zoom=3)
+        mapbox=dict(accesstoken=mapbox_token,center=go.layout.mapbox.Center(lat=latitude, lon=longitude),zoom=3)
         )
         fig5 = go.Figure(data=map_data, layout=layout)
         fig5.update_layout(title_text= n +" total "+d,title_x=0.2,title_font_family="Sitka Small",
