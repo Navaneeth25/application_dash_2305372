@@ -6,4 +6,4 @@ dash_pivottable
 seaborn
 gunicorn
 scipy
-sklearn
+scikit_learn
