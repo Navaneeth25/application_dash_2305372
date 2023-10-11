@@ -5,3 +5,5 @@ dash_bootstrap_components
 dash_pivottable
 seaborn
 gunicorn
+scipy
+sklearn
