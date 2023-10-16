@@ -70,7 +70,7 @@ header = html.H4(
 layout= html.Div(children =[header,
                     dbc.Row(
                     [dbc.Col(sidebar,width=2,style={"height": "35vh","margin":"10 px"}),
-                    dbc.Col(dcc.Graph(id = 'fig6',style={'height': '60vh',"margin":"10 px"},figure =fig6),width=8), 
+                    dbc.Col(dcc.Loading(dcc.Graph(id = 'fig6',style={'height': '60vh',"margin":"10 px"},figure =fig6),type="cube"),width=8), 
                     ])],style={"background-color": "black"})
 @callback(Output('fig6', 'figure'),[Input('selecting-plot', 'value')])
 def updatefig(g):
