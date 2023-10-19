@@ -19,7 +19,7 @@ dash.register_page(__name__, name='Anomaly Detection')
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
 covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
 country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
-countries_lat_long=pd.read_csv('C:/Users/navan/Downloads/archive/world_country_and_usa_states_latitude_and_longitude_values.csv')
+countries_lat_long=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/world_country_and_usa_states_latitude_and_longitude_values.csv')
 countries_lat_long.drop(['usa_state_code', 'usa_state_latitude','usa_state_longitude','usa_state','country_code'], axis=1,inplace=True)
 countries_lat_long.rename(columns = {'country':'CountryName'}, inplace = True)
 new_dataset=pd.merge(covid_dataset, countries_lat_long, on="CountryName",how="left")
