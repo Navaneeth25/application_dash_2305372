@@ -19,9 +19,9 @@ warnings.filterwarnings('ignore')
 import dash_bootstrap_components as dbc
 dash.register_page(__name__, name='Anomaly Detection')
 dbc_css = "https://cdn.jsdelivr.net/gh/AnnMarieW/dash-bootstrap-templates/dbc.min.css"
-covid_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/OxCGRT_summary20200520.csv')
-country_continent_dataset=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/country-and-continent.csv')
-countries_lat_long=pd.read_csv('https://raw.githubusercontent.com/Navaneeth25/covid_dataset/main/world_country_and_usa_states_latitude_and_longitude_values.csv')
+covid_dataset=pd.read_csv('C:/Users/navan/Downloads/project_datasets/OxCGRT_summary20200520.csv')
+country_continent_dataset=pd.read_csv('C:/Users/navan/Downloads/project_datasets/country-and-continent.csv')
+countries_lat_long=pd.read_csv('C:/Users/navan/Downloads/project_datasets/world_country_and_usa_states_latitude_and_longitude_values.csv')
 countries_lat_long.drop(['usa_state_code', 'usa_state_latitude','usa_state_longitude','usa_state','country_code'], axis=1,inplace=True)
 countries_lat_long.rename(columns = {'country':'CountryName'}, inplace = True)
 new_dataset=pd.merge(covid_dataset, countries_lat_long, on="CountryName",how="left")
@@ -47,6 +47,8 @@ fillna_values = fillna_values.drop_duplicates(  subset = ['CountryName', 'Date']
 fillna_values['Continent_Name'] = fillna_values['Continent_Name'].replace(['North America', 'Europe', 'South America','Africa','Asia','Oceania'], ['north america', 'europe', 'south america','africa','asia','oceania'])
 fillna_values['daily_cases'] = fillna_values.groupby('CountryName')['ConfirmedCases'].diff()
 fillna_values['daily_cases'] = fillna_values.groupby('CountryName')['daily_cases'].bfill().ffill()
+fillna_values['daily_deaths'] = fillna_values.groupby('CountryName')['ConfirmedDeaths'].diff()
+fillna_values['daily_deaths'] = fillna_values.groupby('CountryName')['daily_deaths'].bfill().ffill()
 Model_data=fillna_values.copy()
 agg_df = Model_data.groupby('Date')['daily_cases'].sum().reset_index()
 z_scores = stats.zscore(agg_df['daily_cases'])
@@ -54,7 +56,6 @@ threshold = 2
 outliers = abs(z_scores) > threshold
 agg_df['outliers'] = outliers
 data=agg_df[agg_df['outliers'] == 'True'].copy()
-
 data_list = data.to_dict(orient='records')
 sidebar = html.Div(
     [
@@ -62,7 +63,7 @@ sidebar = html.Div(
             [  
                 html.Label('Select The Model'),
                 dcc.Dropdown(id="selecting-model",options=[{'label': 'Z-score', 'value': 'Z-score'},{'label': 'isolation-forest', 'value': 'isolation-forest'},
-                                                           {'label': 'DBScan', 'value': 'DBScan'},
+                                                           {'label': 'DBScan', 'value': 'DBScan'},{'label': 'PCA', 'value': 'PCA'},{'label': 'PCA_Multi', 'value': 'PCA_Multi'}
                                                           ], value='Z-score'),
                 html.Br(),
                 html.Label('Select Country for the model:'),
@@ -106,12 +107,13 @@ def updatefig(g,d,m):
         data=agg_df[agg_df['outliers'] == True].copy()
         data_list = data.to_dict(orient='records')
         anomaly_columns = [{'name': col, 'id': col} for col in agg_df.columns]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         agg_df,
         x='Date',
         y='daily_cases',
         color='outliers',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted Z-Score'
         )
@@ -129,12 +131,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "outliers", "id": "outliers"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         zscore_data,
         x='Date',
         y='daily_cases',
         color='outliers',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted Z-Score'
         )       
@@ -151,12 +154,13 @@ def updatefig(g,d,m):
         data=agg_df[agg_df['Anomaly'] == 'True'].copy()
         data_list = data.to_dict(orient='records')
         anomaly_columns = [{'name': col, 'id': col} for col in agg_df.columns]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         agg_df,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
@@ -176,17 +180,18 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         agg_df,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'], 
+        color_discrete_map=color_map, 
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
         return fig8,anomaly_columns,data_list
-    if g=='Z-score' and d=='Not Selected' and m is not None:
+    elif g=='Z-score' and d=='Not Selected' and m is not None:
         Model_data=fillna_values.copy()
         agg_df = Model_data.groupby('Date')['daily_cases'].sum().reset_index()
         z_scores = stats.zscore(agg_df['daily_cases'])
@@ -200,12 +205,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "outliers", "id": "outliers"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         agg_df,
         x='Date',
         y='daily_cases',
         color='outliers',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted Z-Score'
         )
@@ -223,12 +229,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "outliers", "id": "outliers"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         zscore_data,
         x='Date',
         y='daily_cases',
         color='outliers',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted Z-Score'
         )       
@@ -249,12 +256,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         agg_df,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
@@ -274,12 +282,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         agg_df,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'], 
+        color_discrete_map=color_map, 
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
@@ -299,12 +308,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         DBScan_data,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
@@ -324,12 +334,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         DBScan_data,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
@@ -348,12 +359,13 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         DBScan_data,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
@@ -372,13 +384,251 @@ def updatefig(g,d,m):
             {"name": "daily_cases", "id": "daily_cases"},
             {"name": "Anomaly", "id": "Anomaly"}
         ]
+        color_map = {True: 'red', False: 'blue'}
         fig8 = px.scatter(
         DBScan_data,
         x='Date',
         y='daily_cases',
         color='Anomaly',
-        color_discrete_sequence=['blue', 'red'],  
+        color_discrete_map=color_map,  
         labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
         title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
         )
         return fig8,anomaly_columns,data_list
+    elif g=='PCA' and d=='Not Selected' and m is not None:
+        new_data = fillna_values[['Date','daily_cases','CountryName']].copy()
+        new_data = new_data.groupby('Date')['daily_cases'].sum().reset_index()
+        univariate_data= new_data['daily_cases'].values.reshape(-1, 1)
+        scaler = StandardScaler()
+        univariate_data_std = scaler.fit_transform(univariate_data)
+        pca = PCA(n_components=1)
+        pca_result = pca.fit_transform(univariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(univariate_data - data_reconstructed)
+        threshold = m
+        anomalies = (residuals > threshold).flatten()
+        new_data['Anomaly'] = anomalies
+        new_data1=new_data[new_data['Anomaly'] == True].copy()
+        data_list = new_data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in new_data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        new_data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA' and d=='Not Selected' and m is None:
+        data = fillna_values[['Date','daily_cases','CountryName']].copy()
+        data = data.groupby('Date')['daily_cases'].sum().reset_index()
+        univariate_data = data['daily_cases'].values.reshape(-1, 1)
+        scaler = StandardScaler()
+        univariate_data_std = scaler.fit_transform(univariate_data)
+        pca = PCA(n_components=1)
+        pca_result = pca.fit_transform(univariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(univariate_data - data_reconstructed)
+        Q1 = np.percentile(residuals, 25)
+        Q3 = np.percentile(residuals, 75)
+        IQR = Q3 - Q1
+        threshold = Q3 + 1.5 * IQR
+        anomalies = (residuals > threshold).flatten()
+        data['Anomaly'] = anomalies
+        data1=data[data['Anomaly'] == True].copy()
+        data_list = data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA' and d and m is None:
+        data = fillna_values[['Date','daily_cases','CountryName']].copy()
+        data = data[data['CountryName'] == d].copy()
+        univariate_data = data['daily_cases'].values.reshape(-1, 1)
+        scaler = StandardScaler()
+        univariate_data_std = scaler.fit_transform(univariate_data)
+        pca = PCA(n_components=1)
+        pca_result = pca.fit_transform(univariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(univariate_data - data_reconstructed)
+        Q1 = np.percentile(residuals, 25)
+        Q3 = np.percentile(residuals, 75)
+        IQR = Q3 - Q1
+        threshold = Q3 + 1.5 * IQR
+        anomalies = (residuals > threshold).flatten()
+        data['Anomaly'] = anomalies       
+        data1=data[data['Anomaly'] == True].copy()
+        data_list = data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA' and d and m is not None:
+        data = fillna_values[['Date','daily_cases','CountryName']].copy()
+        data = data[data['CountryName'] == d].copy()
+        univariate_data = data['daily_cases'].values.reshape(-1, 1)
+        scaler = StandardScaler()
+        univariate_data_std = scaler.fit_transform(univariate_data)
+        pca = PCA(n_components=1)
+        pca_result = pca.fit_transform(univariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(univariate_data - data_reconstructed)
+        threshold = m
+        anomalies = (residuals > threshold).flatten()
+        data['Anomaly'] = anomalies       
+        data1=data[data['Anomaly'] == True].copy()
+        data_list = data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA_Multi' and d=='Not Selected' and m is not None:
+        data = fillna_values[['Date','daily_cases','daily_deaths','CountryName']].copy()
+        data = data.groupby('Date')[['daily_cases','daily_deaths']].sum().reset_index()
+        selected_columns = ['daily_cases', 'daily_deaths']
+        multivariate_data = data[selected_columns]
+        scaler = StandardScaler()
+        multivariate_data_std = scaler.fit_transform(multivariate_data)
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(multivariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(multivariate_data - data_reconstructed)
+        thresholds = m
+        anomalies = (residuals > thresholds).any(axis=1)
+        data['Anomaly'] = anomalies 
+        new_data1=new_data[new_data['Anomaly'] == True].copy()
+        data_list = new_data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in new_data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        new_data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA_Multi' and d=='Not Selected' and m is None:
+        data = fillna_values[['Date','daily_cases','daily_deaths','CountryName']].copy()
+        data = data.groupby('Date')[['daily_cases','daily_deaths']].sum().reset_index()
+        selected_columns = ['daily_cases', 'daily_deaths']
+        multivariate_data = data[selected_columns]
+        scaler = StandardScaler()
+        multivariate_data_std = scaler.fit_transform(multivariate_data)
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(multivariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(multivariate_data - data_reconstructed)
+        Q1 = np.percentile(residuals, 25, axis=0)
+        Q3 = np.percentile(residuals, 75, axis=0)
+        IQR = Q3 - Q1
+        thresholds = Q3 + 1.5 * IQR
+        anomalies = (residuals > thresholds).any(axis=1)
+        data['Anomaly'] = anomalies 
+        data1=data[data['Anomaly'] == True].copy()
+        data_list = data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA_Multi' and d and m is None:
+        data = fillna_values[['Date','daily_cases','daily_deaths','CountryName']].copy()
+        data = data[data['CountryName'] == d].copy()
+        selected_columns = ['daily_cases', 'daily_deaths']
+        multivariate_data = data[selected_columns]
+        scaler = StandardScaler()
+        multivariate_data_std = scaler.fit_transform(multivariate_data)
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(multivariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(multivariate_data - data_reconstructed)
+        Q1 = np.percentile(residuals, 25, axis=0)
+        Q3 = np.percentile(residuals, 75, axis=0)
+        IQR = Q3 - Q1
+        thresholds = Q3 + 1.5 * IQR
+        anomalies = (residuals > thresholds).any(axis=1)
+        data['Anomaly'] = anomalies       
+        data1=data[data['Anomaly'] == True].copy()
+        data_list = data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    elif g=='PCA_Multi' and d and m is not None:
+        data = fillna_values[['Date','daily_cases','daily_deaths','CountryName']].copy()
+        data = data[data['CountryName'] == d].copy()
+        selected_columns = ['daily_cases', 'daily_deaths']
+        multivariate_data = data[selected_columns]
+        scaler = StandardScaler()
+        multivariate_data_std = scaler.fit_transform(multivariate_data)
+        pca = PCA(n_components=2)
+        pca_result = pca.fit_transform(multivariate_data_std)
+        data_reconstructed = scaler.inverse_transform(pca.inverse_transform(pca_result))
+        residuals = np.abs(multivariate_data - data_reconstructed)
+        thresholds = m
+        anomalies = (residuals > thresholds).any(axis=1)
+        data['Anomaly'] = anomalies      
+        data1=data[data['Anomaly'] == True].copy()
+        data_list = data1.to_dict(orient='records')
+        anomaly_columns = [{'name': col, 'id': col} for col in data1.columns]
+        color_map = {True: 'red', False: 'blue'}
+        fig8 = px.scatter(
+        data,
+        x='Date',
+        y='daily_cases',
+        color='Anomaly',
+        color_discrete_map=color_map,  
+        labels={'x': 'Date', 'cases': 'COVID-19 Cases'},
+        title='Scatter Plot of COVID-19 Cases with Outliers Highlighted isolation-forest'
+        )
+        return fig8,anomaly_columns,data_list
+    
+
+
+        
+    
